@@ -48,6 +48,25 @@ char TxDataBuffer[32] =
 { 0 };
 char RxDataBuffer[32] =
 { 0 };
+
+
+enum{
+	Start_Menu = 1,
+	Waitting_Input =10,
+	Menu_0 = 20,
+	Menu_1 = 30,
+	Menu_0_Watting_Input = 40,
+	Menu_1_Watting_INput = 50,
+};
+uint8_t Menu =0;
+uint8_t sclk[2] = {0};
+uint8_t State =1 ;
+uint8_t LED =0 ;
+uint64_t TimeStamp = 0;
+float LED_TOGGLE = 0 ;
+int F = 1 ;
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -124,6 +143,44 @@ int main(void)
 			sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);
 			HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
 		}
+
+		switch(State){
+			case Start_Menu:
+				sprintf(Menu, "Menu\r\n 0.LEDControl\n\r 1.ButtonStatus\n\r");
+				HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+				State = Waitting_Input;
+				break;
+
+			case Waitting_Input:
+				switch(inputchar){
+				case -1:		//No input
+					break;
+
+				case '0':
+					State = Menu_0;
+					break;
+
+				case '1':
+					State = Menu_1;
+					break;
+
+				default:
+					sprintf(Menu, "Peass Input Only 0 or 1");
+					HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+					break;
+
+				}
+				break;
+
+			case Menu_0:
+				sprintf(Menu, 	"Menu 0\r\n a:Speed Up +1Hz\r\n s:Speed Down -1Hz\r\n"
+								" d.On/Off\r\n x.Back\r\n");
+				HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+				state = Menu_0_wait_input;
+				break;
+
+		}
+
 
 
 
