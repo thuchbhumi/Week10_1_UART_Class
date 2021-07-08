@@ -115,15 +115,15 @@ int main(void)
 
 		/*Method 2 Interrupt Mode*/
 		HAL_UART_Receive_IT(&huart2,  (uint8_t*)RxDataBuffer, 32);
-
 		/*Method 2 W/ 1 Char Received*/
-//		int16_t inputchar = UARTRecieveIT();
-//		if(inputchar!=-1)
-//		{
+		
+		int16_t inputchar = UARTRecieveIT();
+		if(inputchar!=-1)
+		{
 
-//			sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);
-//			HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
-//		}
+			sprintf(TxDataBuffer, "ReceivedChar:[%c]\r\n", inputchar);
+			HAL_UART_Transmit(&huart2, (uint8_t*)TxDataBuffer, strlen(TxDataBuffer), 1000);
+		}
 
 
 
@@ -266,12 +266,17 @@ void UARTRecieveAndResponsePolling()
 
 
 int16_t UARTRecieveIT()
-{
+{	
+	//store data last position
 	static uint32_t dataPos =0;
+	//crate dummy data
 	int16_t data=-1;
+	//check pos in buffer vs last position
 	if(huart2.RxXferSize - huart2.RxXferCount!=dataPos)
 	{
+		//read data from Buffer
 		data=RxDataBuffer[dataPos];
+		//Move to next Pos
 		dataPos= (dataPos+1)%huart2.RxXferSize;
 	}
 	return data;
