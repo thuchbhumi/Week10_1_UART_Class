@@ -48,17 +48,17 @@ char TxDataBuffer[32] =
 { 0 };
 char RxDataBuffer[32] =
 { 0 };
-
+char Menu[100] =
+{ 0 };
 
 enum{
 	Start_Menu = 1,
 	Waitting_Input =10,
 	Menu_0 = 20,
 	Menu_1 = 30,
-	Menu_0_Watting_Input = 40,
-	Menu_1_Watting_INput = 50,
+	Menu_0_Waitting_Input = 40,
+	Menu_1_Waitting_Input = 50,
 };
-uint8_t Menu =0;
 uint8_t sclk[2] = {0};
 uint8_t State =1 ;
 uint8_t LED =0 ;
@@ -113,13 +113,13 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  {
-
-	  char temp[]="HELLO WORLD\r\n please type something to test UART\r\n";
-
-  	  HAL_UART_Transmit_IT(&huart2, (uint8_t*)temp, strlen(temp));
-
-  }
+//  {
+//
+//	  char temp[]="HELLO WORLD\r\n please type something to test UART\r\n";
+//
+//  	  HAL_UART_Transmit_IT(&huart2, (uint8_t*)temp, strlen(temp));
+//
+//  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -165,28 +165,128 @@ int main(void)
 					break;
 
 				default:
-					sprintf(Menu, "Peass Input Only 0 or 1");
+					sprintf(Menu, "Peass Input Only 0 or 1\r\n");
 					HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
 					break;
 
 				}
 				break;
 
+//............................................Menu_Mode............................................................//
+
 			case Menu_0:
-				sprintf(Menu, 	"Menu 0\r\n a:Speed Up +1Hz\r\n s:Speed Down -1Hz\r\n"
+				sprintf(Menu, 	"Menu 0\r\n a:Speed Up   +1Hz\r\n ""s:Speed Down -1Hz\r\n"
 								" d.On/Off\r\n x.Back\r\n");
 				HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
-				state = Menu_0_wait_input;
+				State = Menu_0_Waitting_Input;
 				break;
 
-		}
+			case Menu_1:
+				sprintf(Menu, 	"Menu 1\r\n x.Back\r\n ButtonStatus: [Button Press/Unpress] \r\n");
+				HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+				State = Menu_1_Waitting_Input;
+				break;
 
+//............................................Menu_Waitting............................................................//
 
+//............................................Menu_0_Waitting............................................................//
 
+			case Menu_0_Waitting_Input :
+				switch(inputchar){
 
-		/*This section just simmulate Work Load*/
-		HAL_Delay(100);
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+				case -1:
+					break;
+
+				case 'a':
+					F +=1;
+					sprintf(Menu, "LED Freq %d Hz\r\n",F);
+					HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+					break;
+
+				case 's':
+					F -=1;
+					if(F <= 0){
+						F = 0;
+					}
+					sprintf(Menu, "LED Freq %d Hz\r\n",F);
+					HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+					break;
+
+				case 'd':
+					if(LED == 1){
+						sprintf(Menu, "LED Off\r\n");
+						HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+						LED = 0;
+					}
+					else if(LED == 0){
+						sprintf(Menu, "LED On\r\n");
+						HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+						LED = 1;
+					}
+					break;
+
+				case 'x':
+					State = Start_Menu;
+					break;
+
+				default:
+					sprintf(Menu, "Error!!!\r\n");
+					HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+					break;
+				}
+				break;
+
+//............................................Menu_1_Waitting............................................................//
+
+			case Menu_1_Waitting_Input :
+				switch(inputchar){
+				case -1:
+					break;
+				case 'x':
+					State = Start_Menu;
+					break;
+				default:
+					sprintf(Menu, "Error!!!\r\n");
+					HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+					break;
+				}
+				sclk[0] = HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_13);
+				if(sclk[0] == 0 && sclk[1] == 1){
+					sprintf(Menu, " ButtonStatus: Press\r\n");
+					HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+				}
+
+				else if(sclk[0] == 1 && sclk[1] == 0){
+					sprintf(Menu, " ButtonStatus: Unpress\r\n");
+					HAL_UART_Transmit(&huart2, (uint8_t*)Menu, strlen(Menu), 1000);
+				}
+				else{
+
+				}
+
+				sclk[1] = sclk[0];
+				break;
+			}
+
+			if(LED == 0){
+				HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+				}
+				if(LED == 1){
+					if(F== 0){
+						HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+					}
+					else{
+						LED_TOGGLE = 500/F;
+						if(HAL_GetTick()-TimeStamp >= LED_TOGGLE){
+							TimeStamp = HAL_GetTick();
+							HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+						}
+					}
+				}
+
+		/*This section just simulate Work Load*/
+//		HAL_Delay(100);
+//		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
